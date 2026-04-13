@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iTECHLAB | Lab Assignment v16</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary:#6366f1; --primary-glow:rgba(99,102,241,0.15);
+            --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0;
+            --danger:#ef4444; --warning:#f59e0b;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans',sans-serif; }
+        body { background:var(--bg); padding:20px; color:#1e293b; line-height:1.5; }
+        .container { max-width:1400px; margin:0 auto; }
+        header { display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; flex-wrap:wrap; gap:20px; }
+        .header-left h1 { font-size:1.75rem; font-weight:800; letter-spacing:-0.02em; }
+
+        .nav-group { display:flex; flex-direction:column; gap:10px; margin-bottom:25px; background:white; padding:20px; border-radius:20px; border:1px solid var(--border); }
+        .nav-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .nav-label { font-size:0.65rem; font-weight:800; color:#64748b; text-transform:uppercase; width:60px; flex-shrink:0; }
+        .pill-box { display:flex; gap:5px; background:#f1f5f9; padding:4px; border-radius:50px; }
+        .pill { padding:6px 16px; border-radius:50px; border:none; cursor:pointer; font-weight:700; font-size:0.7rem; transition:0.3s; color:#64748b; background:transparent; }
+        .pill.active { background:var(--primary); color:white; box-shadow:0 4px 12px rgba(99,102,241,0.3); }
+
+        .swap-alert { background:#fffbeb; border:1.5px solid #fcd34d; border-radius:14px; padding:12px 18px; margin-bottom:18px; display:none; }
+        .swap-alert h3 { font-size:0.7rem; font-weight:900; color:#92400e; text-transform:uppercase; margin-bottom:6px; }
+        .swap-item { font-size:0.75rem; color:#78350f; padding:3px 0; border-bottom:1px solid #fde68a; }
+        .swap-item:last-child { border-bottom:none; }
+
+        .room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; margin-bottom:24px; }
+        .room-card { background:var(--card); border-radius:20px; padding:20px; border:2px solid transparent; transition:0.3s; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+        .room-card:hover { border-color:var(--primary); }
+        .room-card.active-filter { border-color:var(--primary); background:#f5f6ff; }
+        .room-card.was-swapped { border-color:var(--warning); background:#fffbeb; }
+        .room-card.no-session { opacity:0.38; cursor:default; }
+        .room-num { font-size:0.6rem; font-weight:900; color:var(--primary); text-transform:uppercase; margin-bottom:4px; }
+        .room-topic { font-size:0.85rem; color:#0f172a; font-weight:800; min-height:36px; line-height:1.3; margin-bottom:8px; }
+        .progress-container { background:#f1f5f9; height:8px; border-radius:10px; overflow:hidden; margin-bottom:8px; }
+        .progress-bar { background:var(--primary); height:100%; transition:width 0.5s ease; }
+        .room-card.was-swapped .progress-bar { background:var(--warning); }
+        .occupancy { font-size:0.75rem; font-weight:700; color:#64748b; }
+
+        .tag { display:inline-block; font-size:0.58rem; font-weight:800; padding:2px 8px; border-radius:4px; margin-bottom:6px; margin-right:4px; }
+        .tag-am { background:#dbeafe; color:#1e40af; }
+        .tag-pm { background:#fef3c7; color:#92400e; }
+        .tag-swap { background:#fde68a; color:#78350f; }
+        .tag-cap { background:#f1f5f9; color:#475569; }
+
+        #studentSearch { width:100%; padding:14px 20px; border:1px solid var(--border); border-radius:14px; outline:none; margin-bottom:15px; background:white; font-size:0.85rem; transition:0.2s; }
+        #studentSearch:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-glow); }
+
+        .table-wrapper { background:white; border-radius:20px; border:1px solid var(--border); overflow:hidden; }
+        .assignment-table { width:100%; border-collapse:collapse; }
+        .assignment-table th { background:#f8fafc; padding:12px 20px; text-align:left; font-size:0.65rem; text-transform:uppercase; color:#64748b; font-weight:800; }
+        .assignment-table td { padding:13px 20px; border-bottom:1px solid #f1f5f9; font-size:0.85rem; vertical-align:middle; }
+        .assignment-table tr:last-child td { border-bottom:none; }
+
+        .badge { padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.65rem; background:var(--primary-glow); color:var(--primary); }
+        .badge-swapped { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; margin-left:5px; padding:4px 10px; border-radius:6px; font-weight:800; font-size:0.65rem; }
+        .workshop-title { font-size:0.75rem; color:#64748b; line-height:1.4; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="header-left">
+            <h1>Lab Assignments Master</h1>
+            <p id="statusMsg" style="font-size:0.8rem;font-weight:700;color:#6366f1;">Ready — click Sync to load data</p>
+        </div>
+        <button class="pill" style="background:var(--primary);color:white;padding:10px 22px;" onclick="fetchData()">🔄 Sync Live Data</button>
+    </header>
+
+    <div class="nav-group">
+        <div class="nav-row">
+            <span class="nav-label">Batch</span>
+            <div class="pill-box">
+                <button class="pill active" data-key="batch" onclick="switchParam(this,'batch1')">B1</button>
+                <button class="pill" data-key="batch" onclick="switchParam(this,'batch2')">B2</button>
+                <button class="pill" data-key="batch" onclick="switchParam(this,'batch3')">B3</button>
+                <button class="pill" data-key="batch" onclick="switchParam(this,'batch4')">B4</button>
+                <button class="pill" data-key="batch" onclick="switchParam(this,'batch5')">B5</button>
+                <button class="pill" data-key="batch" onclick="switchParam(this,'batch6')">B6</button>
+            </div>
+        </div>
+        <div class="nav-row">
+            <span class="nav-label">Day</span>
+            <div class="pill-box">
+                <button class="pill active" data-key="day" onclick="switchParam(this,'1')">Day 1</button>
+                <button class="pill" data-key="day" onclick="switchParam(this,'2')">Day 2</button>
+                <button class="pill" data-key="day" onclick="switchParam(this,'3')">Day 3</button>
+                <button class="pill" data-key="day" onclick="switchParam(this,'4')">Day 4</button>
+                <button class="pill" data-key="day" onclick="switchParam(this,'5')">Day 5</button>
+            </div>
+            <div class="pill-box" style="margin-left:10px;">
+                <button class="pill active" data-key="session" onclick="switchParam(this,'AM')">AM</button>
+                <button class="pill" data-key="session" onclick="switchParam(this,'PM')">PM</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="swap-alert" id="swapAlert">
+        <h3>🔄 Room Swaps Applied — Topics Moved to Larger Rooms</h3>
+        <div id="swapList"></div>
+    </div>
+
+    <div class="room-grid" id="roomGrid"></div>
+
+    <input type="text" id="studentSearch" placeholder="🔍 Search participant name..." oninput="renderTable()">
+
+    <div class="table-wrapper">
+        <table class="assignment-table">
+            <thead>
+                <tr>
+                    <th>Teacher Name</th>
+                    <th>Workshop This Session</th>
+                    <th>Assigned Laboratory</th>
+                </tr>
+            </thead>
+            <tbody id="assignmentBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTJEJuWYBbbEtvlroXnqVtjt2V4Ev_F8iT4HR0Pi419O1xEgD4VDfFcyuaT1XiMmG6AZtX8yR5euWyc/pub?output=csv';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOM POOL — physical rooms available for assignment
+// ─────────────────────────────────────────────────────────────────────────────
+const ROOMS = [
+    { id:1, name:"Laboratory 01", capacity:48 },
+    { id:2, name:"Laboratory 02", capacity:50 },
+    { id:3, name:"Laboratory 03", capacity:30 },
+    { id:4, name:"Laboratory 04", capacity:20 },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCHEDULE — one entry per topic per session slot
+// preferredRoom = default room (will be swapped if overflowing)
+// match[]       = substrings matched against exact Google Sheet col O values
+// ─────────────────────────────────────────────────────────────────────────────
+const SCHEDULE = [
+
+    // ── DAY 1 AM ─────────────────────────────────────────────────────────────
+    { day:"1", session:"AM", preferredRoom:1, id:"D1AM-R1",
+      label:"CompuThinkers K – ICT Essentials for Young Learners",
+      match:["CompuThinkers K – ICT Essentials","ICT Essentials for Young Learners"] },
+
+    { day:"1", session:"AM", preferredRoom:2, id:"D1AM-R2",
+      label:"Productivity Tools – Word Desktop Publishing",
+      match:["Productivity Tools – Word Desktop Publishing","Productivity Tools"] },
+
+    { day:"1", session:"AM", preferredRoom:3, id:"D1AM-R3",
+      label:"Scratch Fun with mBlock",
+      match:["Scratch Fun with mBlock"] },
+
+    { day:"1", session:"AM", preferredRoom:4, id:"D1AM-R4",
+      label:"CompuThinkers 1 – Computer Fundamentals for Kids",
+      match:["CompuThinkers 1 – Computer Fundamentals","Computer Fundamentals for Kids"] },
+
+    // ── DAY 1 PM ─────────────────────────────────────────────────────────────
+    { day:"1", session:"PM", preferredRoom:1, id:"D1PM-R1",
+      label:"CompuThinkers 2 – Basic Programming with Scratch Jr",
+      match:["CompuThinkers 2 – Basic Programming with Scratch Jr","Basic Programming with Scratch Jr"] },
+
+    { day:"1", session:"PM", preferredRoom:2, id:"D1PM-R2",
+      label:"Web Design Basics: HTML and CSS",
+      match:["Web Design Basics: HTML and CSS","Web Design Basics"] },
+
+    { day:"1", session:"PM", preferredRoom:3, id:"D1PM-R3",
+      label:"Designing Vector Graphics with Inkscape",
+      match:["Designing Vector Graphics with Inkscape","Vector and Raster Design with Inkscape"] },
+
+    // ── DAY 2 AM ─────────────────────────────────────────────────────────────
+    { day:"2", session:"AM", preferredRoom:1, id:"D2AM-R1",
+      label:"CompuThinkers 3 – Working with PowerPoint",
+      match:["CompuThinkers 3 – Working with PowerPoint","Working with PowerPoint"] },
+
+    { day:"2", session:"AM", preferredRoom:2, id:"D2AM-R2",
+      label:"Video Content Creation – Lights Camera Click with Clipchamp",
+      match:["Lights Camera Click with Clipchamp","Video Content Creation Made Easy"] },
+
+    { day:"2", session:"AM", preferredRoom:3, id:"D2AM-R3",
+      label:"Java Programming Fundamentals",
+      match:["Java Programming Fundamentals - Introduction to Programming with Java","Java Programming Fundamentals"] },
+
+    // ── DAY 2 PM ─────────────────────────────────────────────────────────────
+    { day:"2", session:"PM", preferredRoom:1, id:"D2PM-R1",
+      label:"CompuThinkers 4 – HTML Basics",
+      match:["CompuThinkers 4 – HTML Basics","HTML Basics"] },
+
+    { day:"2", session:"PM", preferredRoom:2, id:"D2PM-R2",
+      label:"Python Coding Essentials",
+      match:["Python Coding Essentials - Learning to Code with Python","Python Coding Essentials"] },
+
+    { day:"2", session:"PM", preferredRoom:3, id:"D2PM-R3",
+      label:"E-Commerce: Business in the Digital Age",
+      match:["E-Commerce: Business in the Digital Age","E-Commerce"] },
+
+    // ── DAY 3 AM ─────────────────────────────────────────────────────────────
+    { day:"3", session:"AM", preferredRoom:1, id:"D3AM-R1",
+      label:"CompuThinkers 5–6 – Multimedia Creation",
+      match:["CompuThinkers 5–6 – Multimedia Creation","Multimedia Creation and Digital Presentation"] },
+
+    { day:"3", session:"AM", preferredRoom:2, id:"D3AM-R2",
+      label:"Media and Information Literacy / Empowerment Technologies",
+      match:["Media and Information Literacy / Empowerment Technologies","Media and Information Literacy"] },
+
+    { day:"3", session:"AM", preferredRoom:3, id:"D3AM-R3",
+      label:"Java Advanced – Designing User Interfaces with Java GUI",
+      match:["Java Advanced - Designing User Interfaces with Java GUI","Java Advanced"] },
+
+    // ── DAY 3 PM — each topic gets its own room ───────────────────────────
+    { day:"3", session:"PM", preferredRoom:4, id:"D3PM-R4a",
+      label:"Arduino 1 – Starting with Arduino",
+      match:["Arduino 1 - Starting with Arduino","Starting with Arduino"] },
+
+    { day:"3", session:"PM", preferredRoom:3, id:"D3PM-R3",
+      label:"RoboStarter K – A Stepping Stone in Robotics World",
+      match:["RoboStarter K – A Stepping Stone in Robotics World","RoboClass RoboStarter K"] },
+
+    { day:"3", session:"PM", preferredRoom:2, id:"D3PM-R2",
+      label:"RoboJuno 1 – CyberPi Console",
+      match:["RoboJuno 1- CyberPi Console","RoboClass - RoboJuno 1","CyberPi Console"] },
+
+    { day:"3", session:"PM", preferredRoom:1, id:"D3PM-R1",
+      label:"RoboPrime 1 – Introduction to Codey Rocky (Mobile App)",
+      match:["RoboPrime1- Introduction to Codey Rocky using the Mobile App","RoboClass RoboPrime1","Introduction to Codey Rocky using the Mobile App"] },
+
+    // ── DAY 4 AM ─────────────────────────────────────────────────────────────
+    { day:"4", session:"AM", preferredRoom:1, id:"D4AM-R1",
+      label:"Arduino 2 – Exploring Arduino",
+      match:["Arduino 2 - Exploring Arduino","Exploring Arduino"] },
+
+    { day:"4", session:"AM", preferredRoom:2, id:"D4AM-R2",
+      label:"RoboPrime 2–3 – Let's Code with Codey Rocky",
+      match:["RoboPrime 2 -3 Let's Code with Codey Rocky","Let's Code with Codey Rocky","RoboPrime 2-3"] },
+
+    { day:"4", session:"AM", preferredRoom:3, id:"D4AM-R3",
+      label:"RoboJuno 2 – Assemble mBot2",
+      match:["RoboJuno 2 – Assemble mBot2","Assemble mBot2","RoboClass - RoboJuno 2"] },
+
+    // ── DAY 4 PM — each topic gets its own room ───────────────────────────
+    { day:"4", session:"PM", preferredRoom:1, id:"D4PM-R1",
+      label:"Arduino 3–4 – Designing and Building Arduino Circuits",
+      match:["Arduino 3- 4 - Designing and Building Arduino Circuits","Designing and Building Arduino Circuits","Building Arduino Circuits"] },
+
+    { day:"4", session:"PM", preferredRoom:2, id:"D4PM-R2",
+      label:"RoboPrime 4 – MicroBit Companion",
+      match:["RoboPrime 4 - MicroBit Companion","MicroBit Companion","RoboClass - RoboPrime 4"] },
+
+    // ── DAY 5 AM ─────────────────────────────────────────────────────────────
+    { day:"5", session:"AM", preferredRoom:1, id:"D5AM-R1",
+      label:"Arduino UNO R4 – Blink, Build and Learn",
+      match:["Arduino UNO R4 - Blink Build and Learn","UNO R4 - Blink","Arduino UNO R4 - Blink,"] },
+
+    { day:"5", session:"AM", preferredRoom:2, id:"D5AM-R2",
+      label:"RoboPrime 5 – MicroBit with Scratch",
+      match:["RoboPrime 5 MicroBit with Scratch","MicroBit with Scratch","RoboClass - RoboPrime 5"] },
+
+    { day:"5", session:"AM", preferredRoom:3, id:"D5AM-R3",
+      label:"mBot 2: Manual Challenge",
+      match:["mBot 2: Manual Challenge","Manual Challenge"] },
+
+    // ── DAY 5 PM — each topic gets its own room ───────────────────────────
+    { day:"5", session:"PM", preferredRoom:1, id:"D5PM-R1",
+      label:"Arduino UNO R4 – Code, Connect and Create with IoT",
+      match:["Arduino UNO R4 - Code Connect and Create with IoT","Code Connect and Create with IoT","Code, Connect, and Create with IoT"] },
+
+    { day:"5", session:"PM", preferredRoom:2, id:"D5PM-R2",
+      label:"RoboPrime 6 – Build and Connect with RingBit MicroBit",
+      match:["RoboPrime 6 - Build and Connect with RingBit MicroBit","Build and Connect with RingBit","RoboClass - RoboPrime 6"] },
+
+    { day:"5", session:"PM", preferredRoom:3, id:"D5PM-R3",
+      label:"mBot 2: Autonomous Challenge",
+      match:["mBot 2: Autonomous Challenge","Autonomous Challenge"] },
+];
+
+let params = { batch:'batch1', day:'1', session:'AM' };
+let allParticipants = [];
+let activeRoomFilter = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOM SWAP LOGIC
+// 1. Count participants per topic slot for current day-session
+// 2. If any slot's count >= 90% of its preferred room's capacity,
+//    find a bigger available room and swap the two topics
+// 3. Return final room assignment map: slotId -> roomId
+// ─────────────────────────────────────────────────────────────────────────────
+function computeRoomAssignments(slots, counts) {
+    // Start with preferred rooms
+    const assignment = {}; // slotId -> roomId
+    slots.forEach(s => assignment[s.id] = s.preferredRoom);
+
+    const swaps = [];
+    let changed = true;
+
+    // Iterate until no more swaps needed (handles chain swaps)
+    while (changed) {
+        changed = false;
+        slots.forEach(slotA => {
+            const roomA = assignment[slotA.id];
+            const roomAMeta = ROOMS.find(r => r.id === roomA);
+            const countA = counts[slotA.id] || 0;
+            const threshold = Math.floor(roomAMeta.capacity * 0.9);
+
+            if (countA >= threshold) {
+                // Find another slot that currently has a bigger room
+                const candidates = slots
+                    .filter(slotB => {
+                        if (slotB.id === slotA.id) return false;
+                        const roomB = assignment[slotB.id];
+                        const roomBMeta = ROOMS.find(r => r.id === roomB);
+                        return roomBMeta.capacity > roomAMeta.capacity;
+                    })
+                    .sort((a, b) => {
+                        // Prefer swapping with the room that has the most spare capacity
+                        const capA = ROOMS.find(r => r.id === assignment[a.id]).capacity;
+                        const capB = ROOMS.find(r => r.id === assignment[b.id]).capacity;
+                        return capB - capA;
+                    });
+
+                if (candidates.length > 0) {
+                    const slotB = candidates[0];
+                    const roomB = assignment[slotB.id];
+
+                    // Swap rooms
+                    assignment[slotA.id] = roomB;
+                    assignment[slotB.id] = roomA;
+
+                    swaps.push({
+                        topicA: slotA.label,
+                        topicB: slotB.label,
+                        fromRoom: ROOMS.find(r => r.id === roomA).name,
+                        toRoom: ROOMS.find(r => r.id === roomB).name,
+                    });
+
+                    changed = true;
+                }
+            }
+        });
+    }
+
+    return { assignment, swaps };
+}
+
+// Parse comma-separated workshop list from sheet col 14
+function parseWorkshops(raw) {
+    return raw
+        .split(/,\s*(?=[A-Z]|RoboClass|Arduino|Java|Python|Scratch|Web|Video|Media|E-Commerce|Productivity|Designing|CompuThinkers|mBot)/)
+        .map(w => w.trim())
+        .filter(w => w.length > 0);
+}
+
+// Match a single workshop title to a slot in the current day-session
+function resolveSlot(workshopTitle, slots) {
+    const lower = workshopTitle.toLowerCase();
+    return slots.find(s =>
+        s.match.some(kw => lower.includes(kw.toLowerCase()))
+    ) || null;
+}
+
+async function fetchData() {
+    const status = document.getElementById('statusMsg');
+    status.innerText = '⏳ Syncing...';
+    status.style.color = '#6366f1';
+    try {
+        const res = await fetch(`${CSV_URL}&t=${Date.now()}`);
+        const csv = await res.text();
+        const lines = csv.split(/\r?\n/).filter(l => l.trim());
+        allParticipants = lines.slice(1).map(line => {
+            const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            return {
+                name:      (cols[4]  || '').replace(/"/g,'').trim(),
+                batch:     (cols[13] || '').toLowerCase().replace(/\s/g,''),
+                workshops: parseWorkshops((cols[14] || '').replace(/^"|"$/g,'').trim())
+            };
+        }).filter(p => p.name.length > 0);
+        status.innerText = `✅ Synced: ${allParticipants.length} records`;
+        status.style.color = '#059669';
+        processAssignments();
+    } catch(e) {
+        status.innerText = '❌ Sync failed. Check connection.';
+        status.style.color = '#ef4444';
+    }
+}
+
+function processAssignments() {
+    // Step 1 — get slots for current day-session
+    const slots = SCHEDULE.filter(s => s.day === params.day && s.session === params.session);
+
+    // Step 2 — count participants per slot (using natural match, before room swap)
+    const counts = {}; // slotId -> count
+    slots.forEach(s => counts[s.id] = 0);
+
+    const participantRows = []; // { name, slot, workshopTitle }
+    allParticipants.forEach(p => {
+        if (p.batch !== params.batch) return;
+        p.workshops.forEach(ws => {
+            const slot = resolveSlot(ws, slots);
+            if (!slot) return;
+            counts[slot.id]++;
+            participantRows.push({ name: p.name, slot, workshopTitle: ws });
+        });
+    });
+
+    // Step 3 — compute room swaps based on counts vs capacity
+    const { assignment, swaps } = computeRoomAssignments(slots, counts);
+
+    // Step 4 — build final display rows using swapped room assignments
+    const swappedSlotIds = new Set(swaps.flatMap(sw => {
+        const sA = slots.find(s => s.label === sw.topicA);
+        const sB = slots.find(s => s.label === sw.topicB);
+        return [sA?.id, sB?.id].filter(Boolean);
+    }));
+
+    window.filteredData = participantRows.map(row => ({
+        name: row.name,
+        topic: row.slot.label,
+        roomId: assignment[row.slot.id],
+        roomName: `Room ${assignment[row.slot.id]}`,
+        wasSwapped: swappedSlotIds.has(row.slot.id),
+    }));
+
+    showSwaps(swaps);
+    updateUI(slots, counts, assignment, swappedSlotIds);
+}
+
+function showSwaps(swaps) {
+    const box  = document.getElementById('swapAlert');
+    const list = document.getElementById('swapList');
+    if (swaps.length > 0) {
+        box.style.display = 'block';
+        list.innerHTML = swaps.map(sw =>
+            `<div class="swap-item">
+                🔄 <strong>"${sw.topicA}"</strong> moved to ${sw.toRoom}
+                &nbsp;↔&nbsp;
+                <strong>"${sw.topicB}"</strong> moved to ${sw.fromRoom}
+            </div>`
+        ).join('');
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+function updateUI(slots, counts, assignment, swappedSlotIds) {
+    const sessionClass = params.session === 'AM' ? 'am' : 'pm';
+
+    // Build one card per slot (not per physical room)
+    const cards = slots.map(slot => {
+        const assignedRoomId   = assignment[slot.id];
+        const assignedRoomMeta = ROOMS.find(r => r.id === assignedRoomId);
+        const count   = counts[slot.id] || 0;
+        const cap     = assignedRoomMeta.capacity;
+        const perc    = Math.min(Math.round(count / cap * 100), 100);
+        const isSwapped  = swappedSlotIds.has(slot.id);
+        const isSelected = activeRoomFilter === `Room ${assignedRoomId}:${slot.id}`;
+
+        return `
+        <div class="room-card ${isSelected ? 'active-filter' : ''} ${isSwapped ? 'was-swapped' : ''}"
+             onclick="toggleRoomFilter('Room ${assignedRoomId}:${slot.id}')">
+            <div class="room-num">${assignedRoomMeta.name}</div>
+            <span class="tag tag-${sessionClass}">${params.session}</span>
+            <span class="tag tag-cap">Cap: ${cap}</span>
+            ${isSwapped ? '<span class="tag tag-swap">🔄 Swapped</span>' : ''}
+            <div class="room-topic">${slot.label}</div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width:${perc}%"></div>
+            </div>
+            <div class="occupancy">${count} / ${cap} Teachers</div>
+        </div>`;
+    });
+
+    document.getElementById('roomGrid').innerHTML = cards.join('');
+    renderTable();
+}
+
+function toggleRoomFilter(key) {
+    activeRoomFilter = (activeRoomFilter === key) ? null : key;
+    processAssignments();
+}
+
+function renderTable() {
+    const query = document.getElementById('studentSearch').value.toLowerCase();
+    const data  = window.filteredData || [];
+
+    const view = data.filter(p => {
+        const nameMatch = p.name.toLowerCase().includes(query);
+        if (!activeRoomFilter) return nameMatch;
+        // activeRoomFilter format: "Room X:slotId" — match on roomId
+        const [, roomPart] = activeRoomFilter.split(':');
+        return nameMatch; // slot filtering handled by room card click → processAssignments re-renders
+    });
+
+    // If a room card is selected, also filter by topic label
+    const selectedSlotLabel = (() => {
+        if (!activeRoomFilter) return null;
+        const slotId = activeRoomFilter.split(':')[1];
+        const slot = SCHEDULE.find(s => s.id === slotId);
+        return slot ? slot.label : null;
+    })();
+
+    const finalView = selectedSlotLabel
+        ? view.filter(p => p.topic === selectedSlotLabel)
+        : view;
+
+    const body = document.getElementById('assignmentBody');
+    if (finalView.length > 0) {
+        body.innerHTML = finalView.map(p => `
+            <tr>
+                <td style="font-weight:700;text-transform:uppercase;">${p.name}</td>
+                <td class="workshop-title">${p.topic}</td>
+                <td>
+                    <span class="badge">Room ${p.roomId}</span>
+                    ${p.wasSwapped ? '<span class="badge-swapped">🔄 Swapped</span>' : ''}
+                </td>
+            </tr>`).join('');
+    } else {
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:50px;color:#94a3b8;">No participants for this session.</td></tr>`;
+    }
+}
+
+function switchParam(btn, val) {
+    params[btn.getAttribute('data-key')] = val;
+    btn.parentElement.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRoomFilter = null;
+    processAssignments();
+}
+
+fetchData();
+</script>
+</body>
+</html>

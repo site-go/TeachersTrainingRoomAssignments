@@ -150,20 +150,35 @@
     border: 1.5px solid var(--border);
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
   }
   .room-card:hover { border-color: var(--accent-mid); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(80,70,228,0.1); }
   .room-card.active-filter { border-color: var(--accent); background: var(--accent-light); }
   .room-card.empty { opacity: 0.45; pointer-events: none; }
 
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
   .card-room-label {
     font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--accent);
-    margin-bottom: 4px;
     font-family: 'DM Mono', monospace;
   }
+  .export-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .export-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
   .card-tags { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
   .tag {
     font-size: 0.58rem;
@@ -433,6 +448,27 @@ function resolveSlot(workshopTitle, slots) {
   return slots.find(s => s.match.some(kw => lower.includes(kw.toLowerCase()))) || null;
 }
 
+// ── NEW FEATURE: EXPORT CSV ──
+function exportToCSV(slotId, topicLabel) {
+  const dataToExport = filteredRows.filter(r => r.slotId === slotId);
+  if (dataToExport.length === 0) return alert("No data to export.");
+
+  let csvContent = "Teacher Name,Workshop,Laboratory\n";
+  dataToExport.forEach(r => {
+    const safeName = r.name.replace(/"/g, '""');
+    csvContent += `"${safeName}","${r.topic}","Lab 0${r.roomId}"\n`;
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const fileName = `${params.batch}_Day${params.day}_${params.session}_${topicLabel.substring(0, 15)}`.replace(/\s+/g, '_');
+  
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${fileName}.csv`);
+  link.click();
+}
+
 async function fetchData() {
   const status = document.getElementById('statusMsg');
   const btn = document.getElementById('syncBtn');
@@ -497,8 +533,11 @@ function processAssignments() {
       const isActive = activeSlotId === slot.id;
       return `
       <div class="room-card ${isActive ? 'active-filter' : ''} ${cnt === 0 ? 'empty' : ''}"
-           onclick="toggleFilter('${slot.id}', '${slot.label.replace(/'/g,"\\'")}')">
-        <div class="card-room-label">${room.name}</div>
+            onclick="toggleFilter('${slot.id}', '${slot.label.replace(/'/g,"\\'")}')">
+        <div class="card-header">
+          <div class="card-room-label">${room.name}</div>
+          ${cnt > 0 ? `<button class="export-btn" onclick="event.stopPropagation(); exportToCSV('${slot.id}', '${slot.label.replace(/'/g,"\\'")}')">📥 CSV</button>` : ''}
+        </div>
         <div class="card-tags">
           <span class="tag ${sessionTag}">${params.session}</span>
         </div>

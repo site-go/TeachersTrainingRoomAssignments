@@ -447,7 +447,6 @@ function resolveSlot(workshopTitle, slots) {
   return slots.find(s => s.match.some(kw => lower.includes(kw.toLowerCase()))) || null;
 }
 
-// ── NEW FEATURE: EXPORT CSV ──
 function exportToCSV(slotId, topicLabel) {
   const dataToExport = filteredRows.filter(r => r.slotId === slotId);
   if (dataToExport.length === 0) return alert("No data to export.");
@@ -494,28 +493,36 @@ async function fetchData() {
   }
 }
 
+/** * UPDATED FUNCTION: processAssignments
+ * Duplicate restriction removed. Multiple entries of the same name are now allowed.
+ */
 function processAssignments() {
   const slots = SCHEDULE.filter(s => s.day === params.day && s.session === params.session);
   const counts = {};
   slots.forEach(s => counts[s.id] = 0);
+  
   const rows = [];
 
   allParticipants.forEach(p => {
     if (p.batch !== params.batch) return;
+    
     p.workshops.forEach(ws => {
       const slot = resolveSlot(ws, slots);
       if (!slot) return;
+      
+      // Duplicates are now explicitly allowed: 
+      // Removed the Set/assignedKeys logic.
       counts[slot.id]++;
-      rows.push({ name: p.name, slot, workshopTitle: ws });
+      rows.push({ 
+        name: p.name, 
+        topic: slot.label, 
+        slotId: slot.id, 
+        roomId: slot.preferredRoom 
+      });
     });
   });
 
-  filteredRows = rows.map(r => ({
-    name: r.name,
-    topic: r.slot.label,
-    slotId: r.slot.id,
-    roomId: r.slot.preferredRoom
-  }));
+  filteredRows = rows;
 
   document.getElementById('statTotal').textContent = allParticipants.length;
   document.getElementById('statSession').textContent = filteredRows.length;
@@ -532,10 +539,10 @@ function processAssignments() {
       const isActive = activeSlotId === slot.id;
       return `
       <div class="room-card ${isActive ? 'active-filter' : ''} ${cnt === 0 ? 'empty' : ''}"
-            onclick="toggleFilter('${slot.id}', '${slot.label.replace(/'/g,"\\'")}')">
+            onclick="toggleFilter('${slot.id}', '${slot.label.replace(/'/g,"\\")}')">
         <div class="card-header">
           <div class="card-room-label">${room.name}</div>
-          ${cnt > 0 ? `<button class="export-btn" onclick="event.stopPropagation(); exportToCSV('${slot.id}', '${slot.label.replace(/'/g,"\\'")}')">📥 CSV</button>` : ''}
+          ${cnt > 0 ? `<button class="export-btn" onclick="event.stopPropagation(); exportToCSV('${slot.id}', '${slot.label.replace(/'/g,"\\")}')">📥 CSV</button>` : ''}
         </div>
         <div class="card-tags">
           <span class="tag ${sessionTag}">${params.session}</span>

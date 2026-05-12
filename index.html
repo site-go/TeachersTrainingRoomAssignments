@@ -414,9 +414,13 @@ const SCHEDULE = [
   { day:"3", session:"AM", preferredRoom:1, id:"D3AM-R1", label:"CompuThinkers 5–6 – Multimedia Creation", match:["CompuThinkers 5–6 – Multimedia Creation","Multimedia Creation and Digital Presentation"] },
   { day:"3", session:"AM", preferredRoom:2, id:"D3AM-R2", label:"Media and Information Literacy / Empowerment Technologies", match:["Media and Information Literacy / Empowerment Technologies","Media and Information Literacy"] },
   { day:"3", session:"AM", preferredRoom:3, id:"D3AM-R3", label:"Java Advanced – Designing User Interfaces with Java GUI", match:["Java Advanced - Designing User Interfaces with Java GUI","Java Advanced"] },
-  { day:"3", session:"PM", preferredRoom:1, id:"D3PM-R1", label:"Arduino 1 – Starting with Arduino, RoboPrime 1 – Introduction to Codey Rocky (Mobile App)", match:["Arduino 1 - Starting with Arduino","Starting with Arduino, RoboPrime1- Introduction to Codey Rocky using the Mobile App","RoboClass RoboPrime1","Introduction to Codey Rocky using the Mobile App"] },
-  { day:"3", session:"PM", preferredRoom:3, id:"D3PM-R3", label:"RoboStarter K – A Stepping Stone in Robotics World", match:["RoboStarter K – A Stepping Stone in Robotics World","RoboClass RoboStarter K"] },
+  
+  // Day 3 PM Updated
+  { day:"3", session:"PM", preferredRoom:1, id:"D3PM-R1", label:"Arduino 1 – Starting with Arduino", match:["Arduino 1 - Starting with Arduino","Starting with Arduino"] },
   { day:"3", session:"PM", preferredRoom:2, id:"D3PM-R2", label:"RoboJuno 1 – CyberPi Console", match:["RoboJuno 1- CyberPi Console","RoboClass - RoboJuno 1","CyberPi Console"] },
+  { day:"3", session:"PM", preferredRoom:3, id:"D3PM-R3", label:"RoboStarter K – A Stepping Stone in Robotics World", match:["RoboStarter K – A Stepping Stone in Robotics World","RoboClass RoboStarter K"] },
+  { day:"3", session:"PM", preferredRoom:4, id:"D3PM-R4", label:"RoboPrime 1 – Introduction to Codey Rocky (Mobile App)", match:["RoboClass RoboPrime1- Introduction to Codey Rocky using the Mobile App","RoboClass RoboPrime1", "Introduction to Codey Rocky using the Mobile App"] },
+  
   { day:"4", session:"AM", preferredRoom:1, id:"D4AM-R1", label:"Arduino 2 – Exploring Arduino", match:["Arduino 2 - Exploring Arduino","Exploring Arduino"] },
   { day:"4", session:"AM", preferredRoom:2, id:"D4AM-R2", label:"RoboPrime 2 -3 Let’s Code with Codey Rocky", match:["RoboPrime 2 -3 Let’s Code with Codey Rocky","Let's Code with Codey Rocky","RoboPrime 2-3"] },
   { day:"4", session:"AM", preferredRoom:3, id:"D4AM-R3", label:"RoboJuno 2 – Assemble mBot2", match:["RoboJuno 2 – Assemble mBot2","Assemble mBot2","RoboClass - RoboJuno 2"] },
@@ -493,9 +497,6 @@ async function fetchData() {
   }
 }
 
-/** * UPDATED FUNCTION: processAssignments
- * Duplicate restriction removed. Multiple entries of the same name are now allowed.
- */
 function processAssignments() {
   const slots = SCHEDULE.filter(s => s.day === params.day && s.session === params.session);
   const counts = {};
@@ -510,8 +511,6 @@ function processAssignments() {
       const slot = resolveSlot(ws, slots);
       if (!slot) return;
       
-      // Duplicates are now explicitly allowed: 
-      // Removed the Set/assignedKeys logic.
       counts[slot.id]++;
       rows.push({ 
         name: p.name, 
@@ -541,7 +540,7 @@ function processAssignments() {
       <div class="room-card ${isActive ? 'active-filter' : ''} ${cnt === 0 ? 'empty' : ''}"
             onclick="toggleFilter('${slot.id}', '${slot.label.replace(/'/g,"\\")}')">
         <div class="card-header">
-          <div class="card-room-label">${room.name}</div>
+          <div class="card-room-label">${room ? room.name : 'Unknown Lab'}</div>
           ${cnt > 0 ? `<button class="export-btn" onclick="event.stopPropagation(); exportToCSV('${slot.id}', '${slot.label.replace(/'/g,"\\")}')">📥 CSV</button>` : ''}
         </div>
         <div class="card-tags">
